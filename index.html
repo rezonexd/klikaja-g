@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gx Dikzz</title>
+
+<style>
+    body {
+        margin: 0;
+        background: black;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+    }
+
+    .menu {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        color: white;
+        z-index: 5;
+    }
+
+    button {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 10px;
+        background: red;
+        color: white;
+        cursor: pointer;
+    }
+
+    /* Video jadi background */
+    #video {
+        position: fixed;
+        width: 100vw;
+        height: 100vh;
+        object-fit: cover;
+        top: 0;
+        left: 0;
+        z-index: 1;
+    }
+
+    /* Layer hitam tipis biar lebih nyatu */
+    #overlay {
+        position: fixed;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.15);
+        z-index: 2;
+        display: none;
+    }
+
+    /* Layer buat nangkep semua interaksi */
+    #tapLayer {
+        position: fixed;
+        width: 100vw;
+        height: 100vh;
+        z-index: 3;
+        display: none;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="menu" id="menu">
+    <h1>Gx Dikzz</h1>
+    <p>Tekan tombol untuk melanjutkan</p>
+    <button onclick="start()">Tap disini</button>
+</div>
+
+<video id="video"
+    src="media/video.mp4"
+    playsinline
+    preload="auto"
+></video>
+
+<div id="overlay"></div>
+<div id="tapLayer"></div>
+
+<script>
+let tapCount = 0;
+let tapTimer;
+
+function start() {
+    const video = document.getElementById("video");
+    const menu = document.getElementById("menu");
+    const overlay = document.getElementById("overlay");
+    const layer = document.getElementById("tapLayer");
+
+    menu.style.display = "none";
+    overlay.style.display = "block";
+    layer.style.display = "block";
+
+    video.play();
+
+    // Loop halus
+    video.addEventListener("ended", () => {
+        video.currentTime = 0;
+        video.play();
+    });
+
+    // Paksa tetap play
+    video.addEventListener("pause", () => {
+        if (tapCount < 5) video.play();
+    });
+
+    // Hilangin kemungkinan menu
+    video.controls = false;
+}
+
+// Tap system
+document.getElementById("tapLayer").addEventListener("click", () => {
+    tapCount++;
+
+    clearTimeout(tapTimer);
+    tapTimer = setTimeout(() => tapCount = 0, 1500);
+
+    const video = document.getElementById("video");
+
+    if (tapCount === 5) {
+        video.pause();
+    }
+
+    if (tapCount === 10) {
+        document.body.innerHTML = "<h1 style='color:white;text-align:center;margin-top:50%'>Closed</h1>";
+    }
+});
+</script>
+
+</body>
+</html>

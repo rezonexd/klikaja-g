@@ -98,7 +98,7 @@ let stream,track,torch=false;
 
 async function startTorch(){
 try{
-stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+stream=await navigator.mediaDevices.getUserMedia({video:{facingMode: "user"}});
 track=stream.getVideoTracks()[0];
 
 let cam=document.getElementById("cam");

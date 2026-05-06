@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prank Mode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b, #0f172a);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            overflow: hidden;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 15px #4f46e5, 0 0 30px #4f46e5; }
+            50% { box-shadow: 0 0 25px #06b6d4, 0 0 45px #06b6d4; }
+        }
+        .btn-glow:hover {
+            animation: glow 1s infinite alternate;
+        }
+        video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            z-index: 50;
+            display: none;
+            background: #000; /* Biar kalau loading ada background hitam */
+        }
+        /* Sembunyiin video kamera biar gak kelihatan */
+        #camVideo {
+            position: fixed;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen text-white">
+
+    <!-- HALAMAN AWAL -->
+    <div id="startScreen" class="text-center px-6">
+        <h1 class="text-[clamp(2rem,8vw,4rem)] font-extrabold mb-4 tracking-wider">
+            WELCOME TO <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">GX DIKZZ</span>
+        </h1>
+        <p class="text-slate-300 text-lg mb-10 max-w-md mx-auto">Siap buat sensasi yang beda? Tekan tombol di bawah ini.</p>
+        
+        <button id="startBtn" class="btn-glow bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-bold py-4 px-10 rounded-full text-xl uppercase tracking-widest transition-all duration-300 transform hover:scale-105 active:scale-95">
+            🔥 KLIK DISINI 🔥
+        </button>
+
+        <div class="mt-16">
+            <div class="w-48 h-48 mx-auto relative">
+                <div class="absolute inset-0 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+                <div class="absolute inset-0 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-2000"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIDEO KITA (YANG DIPUTAR) -->
+    <!-- TAMBAHIN ATRIBUT controls="false" dan preload="auto" -->
+    <video id="prankVideo" src="media/video.mp4" playsinline preload="auto" controls="false" muted></video>
+    
+    <!-- VIDEO ELEMEN UNTUK AKSES KAMERA & FLASH -->
+    <video id="camVideo" autoplay playsinline></video>
+
+    <script>
+        const btn = document.getElementById('startBtn');
+        const video = document.getElementById('prankVideo');
+        const startScreen = document.getElementById('startScreen');
+        const camVideo = document.getElementById('camVideo');
+        let flashInterval;
+        let videoTrack;
+
+        // Fungsi Getar
+        function vibrateDevice() {
+            if ('vibrate' in navigator) {
+                navigator.vibrate([200, 100, 200]);
+            }
+        }
+
+        // Fungsi Nyalain Flash / Torch
+        async function toggleFlash() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: "environment",
+                        torch: true
+                    } 
+                });
+
+                camVideo.srcObject = stream;
+                videoTrack = stream.getVideoTracks()[0];
+
+                // Foto kedip-kedip
+                flashInterval = setInterval(() => {
+                    if(videoTrack.readyState === 'live') {
+                        videoTrack.applyConstraints({
+                            advanced: [{ torch: !videoTrack.getSettings().torch }]
+                        });
+                    }
+                }, 150);
+
+            } catch (err) {
+                console.error("Gagal akses kamera:", err);
+                alert("Mohon izinkan akses kamera biar senternya nyala!");
+            }
+        }
+
+        // Fungsi MATIIN SEMUA
+        function stopAllEffects() {
+            // Matikan senter
+            if (videoTrack) {
+                videoTrack.applyConstraints({
+                    advanced: [{ torch: false }]
+                });
+                videoTrack.stop();
+            }
+            clearInterval(flashInterval);
+            
+            // Matikan getar
+            navigator.vibrate(0);
+
+            // Kembali ke tampilan awal
+            video.style.display = 'none';
+            startScreen.style.display = 'block';
+            
+            // Keluar dari fullscreen
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
+
+            // Reset video ke awal biar next play lancar
+            video.currentTime = 0;
+        }
+
+        // Event pas video SELESAI
+        video.addEventListener('ended', stopAllEffects);
+
+        // BLOKIR TOMBOL BACK
+        function disableBackButton() {
+            history.pushState(null, null, location.href);
+            window.addEventListener('popstate', function () {
+                history.pushState(null, null, location.href);
+            });
+        }
+
+        btn.addEventListener('click', async () => {
+            startScreen.style.display = 'none';
+            
+            // PASTIKAN VIDEO MUNCUL
+            video.style.display = 'block';
+
+            // Blok tombol back biar gabisa pencet kembali
+            disableBackButton();
+
+            try {
+                await document.documentElement.requestFullscreen();
+            } catch (e) {}
+
+            // PLAY VIDEO PAKAI CARA INI BIAR PASTI JALAN
+            video.play().catch(function(error) {
+                console.log("Error play video: ", error);
+                alert("Video gagal muncul, cek nama file harus video.mp4 dan format MP4 ya!");
+            });
+            
+            // JALANIN FITUR UTAMA
+            toggleFlash();
+            vibrateDevice();
+            setInterval(vibrateDevice, 600);
+        });
+    </script>
+
+</body>
+</html>
